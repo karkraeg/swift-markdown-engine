@@ -120,6 +120,12 @@ public protocol MarkdownExtension: Sendable {
     /// Attributes applied to the construct's CONTENT range (between the
     /// markers/fences). Called during styling; must be cheap and synchronous.
     func contentAttributes(theme: MarkdownEditorTheme) -> [NSAttributedString.Key: Any]
+    /// When `true`, the CONTENT range (not just the markers) collapses to
+    /// near-zero width — same tiny-font/negative-kern recipe the engine
+    /// already uses to shrink markers — while the caret is outside the span,
+    /// and reveals normally (via `contentAttributes`) once the caret enters
+    /// it. Default `false` (existing behavior: content always visible).
+    var hidesContentWhenInactive: Bool { get }
     /// Wrap the rendered inner HTML for the clean-copy path
     /// (`childrenHTML` is already escaped / recursively rendered).
     func html(childrenHTML: String) -> String
@@ -132,6 +138,7 @@ public extension MarkdownExtension {
     // first.
     var inline: InlineSyntax? { nil }
     var block: BlockSyntax? { nil }
+    var hidesContentWhenInactive: Bool { false }
 }
 
 // MARK: - Parser-facing registry (internal)

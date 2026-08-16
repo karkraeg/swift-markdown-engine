@@ -742,7 +742,15 @@ enum MarkdownASTStyler {
                 // ATTRIBUTES only; every range comes from the parser, so a
                 // misbehaving extension can restyle its own span at worst.
                 if let ext = ctx.extensionsByID[node.extensionID] {
-                    attrs.append((node.contentRange, ext.contentAttributes(theme: ctx.theme)))
+                    if ext.hidesContentWhenInactive, !ctx.isActive(node.range) {
+                        attrs.append((node.contentRange, [
+                            .foregroundColor: NSColor.clear,
+                            .font: ctx.inlineMarkerFont,
+                            .kern: -ctx.inlineMarkerFont.pointSize
+                        ]))
+                    } else {
+                        attrs.append((node.contentRange, ext.contentAttributes(theme: ctx.theme)))
+                    }
                 }
                 if ctx.isActive(node.range) {
                     for marker in node.markers { attrs.append((marker, [.foregroundColor: ctx.theme.mutedText])) }
