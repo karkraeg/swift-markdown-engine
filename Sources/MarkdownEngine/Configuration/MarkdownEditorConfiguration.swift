@@ -488,10 +488,15 @@ public struct ParagraphStyle: Sendable {
     public var spacingFactor: CGFloat
     /// Extra height (points) added to the default paragraph line height.
     public var lineHeightExtraSpacing: CGFloat
+    /// Multiplier applied to the font's natural line height. `1.0` is the
+    /// font's default; values above `1.0` add breathing room between lines
+    /// within a paragraph.
+    public var lineSpacingMultiplier: CGFloat
 
-    public init(spacingFactor: CGFloat = 0.3, lineHeightExtraSpacing: CGFloat = 2) {
+    public init(spacingFactor: CGFloat = 0.3, lineHeightExtraSpacing: CGFloat = 2, lineSpacingMultiplier: CGFloat = 1.0) {
         self.spacingFactor = spacingFactor
         self.lineHeightExtraSpacing = lineHeightExtraSpacing
+        self.lineSpacingMultiplier = lineSpacingMultiplier
     }
 
     public static let `default` = ParagraphStyle()

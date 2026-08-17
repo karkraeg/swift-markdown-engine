@@ -504,6 +504,14 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         // and no rebuild is needed for it to take effect.
         textView.configuration.lists = configuration.lists
         context.coordinator.configuration.lists = configuration.lists
+        // Line-spacing multiplier feeds a paragraph style baked into the text
+        // storage — needs the same full restyle path as a font change.
+        let paragraphStyleChanged = context.coordinator.configuration.paragraph.lineSpacingMultiplier != configuration.paragraph.lineSpacingMultiplier
+        if paragraphStyleChanged {
+            context.coordinator.configuration.paragraph = configuration.paragraph
+            textView.configuration.paragraph = configuration.paragraph
+            context.coordinator.didInitialFormatting = false
+        }
         // Sync registered extensions (inline spans + fenced blocks). A change alters the GRAMMAR
         // (tokens differ under the new registry), so the coordinator's parsed
         // cache must drop before the restyle — the parse-layer memos invalidate

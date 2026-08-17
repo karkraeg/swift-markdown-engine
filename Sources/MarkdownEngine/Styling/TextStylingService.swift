@@ -32,7 +32,7 @@ struct TextStylingService {
         let baseFont = NSFont(name: fontName, size: fontSize) ?? NSFont.systemFont(ofSize: fontSize)
         let defaultLineHeight = layoutBridgeDefaultLineHeight(for: baseFont, using: layoutBridge)
         let paragraph = NSMutableParagraphStyle()
-        paragraph.minimumLineHeight = ceil(defaultLineHeight) + configuration.paragraph.lineHeightExtraSpacing
+        paragraph.minimumLineHeight = ceil(defaultLineHeight * configuration.paragraph.lineSpacingMultiplier) + configuration.paragraph.lineHeightExtraSpacing
         paragraph.lineSpacing = 0
         let baseParagraphSpacing = ceil(defaultLineHeight * configuration.paragraph.spacingFactor)
         paragraph.paragraphSpacing = baseParagraphSpacing
