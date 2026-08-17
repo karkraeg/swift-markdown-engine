@@ -332,8 +332,15 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         textView.recalcOverscroll(for: scrollView)
         textView.setPlaceholder(placeholder)
         // Initial reading-column centering; the resize observer below handles later changes.
+        // Deferred a tick: at this point `scrollView` hasn't been placed into the SwiftUI
+        // view hierarchy yet, so `contentView.bounds` is still the construction-time default
+        // (near zero), not the real proposed width — centering against it pins the column to
+        // the left edge until something else happens to resize the window.
         if configuration.readingWidth != nil {
-            textView.centerReadingColumn(forClipWidth: scrollView.contentView.bounds.width)
+            DispatchQueue.main.async { [weak scrollView] in
+                guard let scrollView else { return }
+                textView.centerReadingColumn(forClipWidth: scrollView.contentView.bounds.width)
+            }
         }
         scrollView.contentView.postsBoundsChangedNotifications = true
         var lastObservedViewportWidth = scrollView.contentView.bounds.width
