@@ -178,6 +178,10 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     var lastCodeSelKey: (UInt64, CGFloat, CGFloat, Set<Int>)?
     var cachedParsedText: String?
     var cachedParsedDocument: ParsedDocument?
+    /// Last-seen combined `styleFingerprint` of `configuration.extensions`, so
+    /// `updateNSView` can detect a style-only extension change (grammar
+    /// unchanged) and restyle without re-parsing. See `MarkdownExtension.styleFingerprint`.
+    var lastExtensionStyleFingerprint: String = ""
     /// Monotonic edit counter: bumped whenever the text storage can have
     /// changed. Lets `parsedDocument` return cache hits in O(1) instead of an
     /// O(doc) string compare. Any code that mutates the storage directly

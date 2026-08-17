@@ -126,6 +126,14 @@ public protocol MarkdownExtension: Sendable {
     /// and reveals normally (via `contentAttributes`) once the caret enters
     /// it. Default `false` (existing behavior: content always visible).
     var hidesContentWhenInactive: Bool { get }
+    /// Opaque string reflecting whatever runtime state feeds `contentAttributes`
+    /// / `hidesContentWhenInactive` (e.g. a user-configurable tint or toggle).
+    /// The embedder rebuilds a fresh `extensions` array on every SwiftUI render,
+    /// so structural equality isn't available — this is how `updateNSView`
+    /// notices a STYLE-only change (grammar unchanged, `id`/`inline`/`block`
+    /// unchanged) and knows to restyle without re-parsing. Default `""`: opt in
+    /// only if your extension exposes runtime-configurable style state.
+    var styleFingerprint: String { get }
     /// Wrap the rendered inner HTML for the clean-copy path
     /// (`childrenHTML` is already escaped / recursively rendered).
     func html(childrenHTML: String) -> String
@@ -138,6 +146,7 @@ public extension MarkdownExtension {
     // first.
     var inline: InlineSyntax? { nil }
     var block: BlockSyntax? { nil }
+    var styleFingerprint: String { "" }
     var hidesContentWhenInactive: Bool { false }
 }
 

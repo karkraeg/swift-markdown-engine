@@ -256,6 +256,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         textView.maxOverscrollPoints = configuration.overscroll.maxPoints
         textView.minOverscrollPoints = configuration.overscroll.minPoints
         context.coordinator.configuration = configuration
+        context.coordinator.lastExtensionStyleFingerprint = configuration.extensions.map(\.styleFingerprint).joined(separator: "\u{1}")
         textView.insertionPointColor = configuration.theme.bodyText
         textView.isEditable = isEditable
         textView.isSelectable = true
@@ -500,10 +501,20 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         // cache must drop before the restyle — the parse-layer memos invalidate
         // themselves via the registry fingerprint.
         let newExtensionFingerprint = configuration.extensionRegistry.fingerprint
-        if newExtensionFingerprint != context.coordinator.configuration.extensionRegistry.fingerprint {
+        let grammarChanged = newExtensionFingerprint != context.coordinator.configuration.extensionRegistry.fingerprint
+        // Style-only change (e.g. a user-toggled color/flag): grammar/parse cache
+        // is still valid, but the current extension instances (read live off
+        // `configuration.extensions` during styling) must be swapped in and the
+        // existing parse re-styled so the new attributes actually apply.
+        let newStyleFingerprint = configuration.extensions.map(\.styleFingerprint).joined(separator: "\u{1}")
+        let styleChanged = newStyleFingerprint != context.coordinator.lastExtensionStyleFingerprint
+        if grammarChanged || styleChanged {
             context.coordinator.configuration.extensions = configuration.extensions
             textView.configuration.extensions = configuration.extensions
-            context.coordinator.cachedParsedDocument = nil
+            context.coordinator.lastExtensionStyleFingerprint = newStyleFingerprint
+            if grammarChanged {
+                context.coordinator.cachedParsedDocument = nil
+            }
             let fullRange = NSRange(location: 0, length: (textView.string as NSString).length)
             if fullRange.length > 0 {
                 context.coordinator.restyleParagraphs([fullRange], in: textView)
