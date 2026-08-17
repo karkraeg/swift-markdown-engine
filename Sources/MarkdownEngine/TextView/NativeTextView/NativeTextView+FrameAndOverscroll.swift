@@ -206,9 +206,10 @@ extension NativeTextView {
         case .fitsContent:
             height = contentHeight
         }
-        // Reading column: the column keeps its fixed wrap width; its centered X is
-        // owned by `centerReadingColumn` (driven from the container's restack).
-        let targetWidth = configuration.readingWidth != nil ? readingColumnWidth : max(width, 0)
+        // Reading column: the column wraps at its effective width — fixed at
+        // `readingWidth` when it fits, shrunk to the viewport when narrower; its
+        // centered X is owned by `centerReadingColumn` (driven from the container's restack).
+        let targetWidth = configuration.readingWidth != nil ? effectiveReadingColumnWidth : max(width, 0)
         let targetSize = NSSize(
             width: targetWidth,
             height: height
@@ -230,21 +231,52 @@ extension NativeTextView {
         }
     }
 
-    /// Re-center the column by moving its X (not resizing it) so it stays smooth during live resize.
+    /// Re-center the column by moving its X. When the viewport is narrower than the
+    /// configured reading column, shrink the column to fit first (re-wrap), so it
+    /// always centers instead of pinning left and clipping at the viewport edge.
     func centerReadingColumn(forClipWidth clipWidth: CGFloat) {
         guard configuration.readingWidth != nil,
               let container = superview as? NativeTextViewContainer else { return }
-        if abs(container.frame.size.width - clipWidth) > 0.5 {
+        let clamped = max(clipWidth, 0)
+        if abs(container.frame.size.width - clamped) > 0.5 {
             var f = container.frame
-            f.size.width = max(clipWidth, 0)
+            f.size.width = clamped
             container.frame = f
         }
-        let originX = floor(max(0, (clipWidth - readingColumnWidth) / 2))
+        // Shrink-to-fit: cap the column at the viewport so it never overflows.
+        let effective = min(readingColumnWidth, clamped)
+        if abs(effectiveReadingColumnWidth - effective) > 0.5 {
+            effectiveReadingColumnWidth = effective
+            applyReadingColumnWrapWidth(effective)
+        }
+        let originX = floor(max(0, (clamped - effective) / 2))
         let delta = originX - frame.origin.x
         if abs(delta) > 0.5 {
             setFrameOrigin(NSPoint(x: originX, y: frame.origin.y))
             repositionWideTableOverlaysForWidthChange(insetDelta: delta)
         }
+    }
+
+    /// Resize the reading column to `width` (re-wrap the text container) and
+    /// re-measure height at the new wrap width. Called when the viewport crosses
+    /// the configured column width.
+    private func applyReadingColumnWrapWidth(_ width: CGFloat) {
+        if let textContainer {
+            let wrapWidth = max(width - textContainerInset.width * 2, 0)
+            if abs(textContainer.size.width - wrapWidth) > 0.5 {
+                textContainer.size = NSSize(width: wrapWidth, height: .greatestFiniteMagnitude)
+                pendingFullLayoutMeasure = true
+                if let textLayoutManager {
+                    textLayoutManager.invalidateLayout(for: textLayoutManager.documentRange)
+                }
+            }
+        }
+        if let scrollView = enclosingScrollView {
+            recalcOverscroll(for: scrollView, targetWidth: width, debugTag: "shrinkReadingColumn")
+        }
+        // Always resize (recalcOverscroll early-returns when height is unchanged).
+        applyManagedFrameSize(width: width)
+        updateWideTableOverlays()
     }
 
     override func setFrameSize(_ newSize: NSSize) {

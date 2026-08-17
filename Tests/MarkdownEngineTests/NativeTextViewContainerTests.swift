@@ -32,6 +32,7 @@ struct NativeTextViewContainerTests {
         var config = MarkdownEditorConfiguration.default
         config.readingWidth = readingWidth
         textView.configuration = config
+        textView.effectiveReadingColumnWidth = textView.readingColumnWidth
         textView.autoresizingMask = []
         let container = NativeTextViewContainer(frame: NSRect(origin: .zero, size: viewport))
         container.autoresizingMask = [.width]
@@ -118,6 +119,24 @@ struct NativeTextViewContainerTests {
         #expect(stack.textView.frame.origin.x == expectedX)
         // The column keeps its fixed width — only its position moves.
         #expect(stack.textView.frame.width == stack.textView.readingColumnWidth)
+    }
+
+    @Test func readingColumnShrinksToFitNarrowViewport() {
+        let stack = makeStack(readingWidth: 400)
+        stack.textView.baseContentHeight = 500
+        stack.textView.applyManagedFrameSize(width: 600)
+
+        // Narrower than the configured column: shrink to fit, no clipping, left-pinned.
+        stack.textView.centerReadingColumn(forClipWidth: 300)
+        #expect(abs(stack.textView.frame.width - 300) <= 0.5)
+        #expect(stack.textView.frame.origin.x == 0)
+        #expect(abs(stack.container.frame.width - 300) <= 0.5)
+
+        // Widen back past the configured width: restore the fixed width and re-center.
+        stack.textView.centerReadingColumn(forClipWidth: 600)
+        #expect(abs(stack.textView.frame.width - stack.textView.readingColumnWidth) <= 0.5)
+        let expectedX = floor((600 - stack.textView.readingColumnWidth) / 2)
+        #expect(stack.textView.frame.origin.x == expectedX)
     }
 
     @Test func headerGrowthOnShortDocAddsNoPhantomScrollRange() {

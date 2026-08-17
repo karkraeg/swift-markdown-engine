@@ -252,6 +252,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         context.coordinator.layoutDelegate = layoutDelegate
         textLayoutManager.delegate = layoutDelegate
         textView.configuration = configuration
+        textView.effectiveReadingColumnWidth = textView.readingColumnWidth
         textView.overscrollPercent = configuration.overscroll.percent
         textView.maxOverscrollPoints = configuration.overscroll.maxPoints
         textView.minOverscrollPoints = configuration.overscroll.minPoints
