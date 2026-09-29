@@ -78,6 +78,7 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     var layoutDelegate: MarkdownLayoutManagerDelegate?
     var onLinkClick: ((String) -> Void)?
     var onCaretRectChange: ((CGRect) -> Void)?
+    var onTextMutation: ((MarkdownTextMutation) -> Void)?
     /// Embedder hook to build the right-click menu (the engine ships none). Gets the
     /// default menu + current selection range, returns the menu to show.
     var onBuildContextMenu: ((NSMenu, NSRange) -> NSMenu)?
@@ -118,9 +119,9 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     /// extension block fence — captured in shouldChangeTextIn so a DELETED
     /// fence still forces the full restyle in textDidChange.
     var pendingExtFenceTouched = false
-    /// Set in shouldChangeTextIn when an edit adds/removes a line break (an
-    /// ordered-list item was inserted/removed → every following number shifts);
-    /// consumed once in textDidChange to restyle the whole ordered run.
+    /// Set in shouldChangeTextIn when an edit changes list-leading syntax or a
+    /// line break, which can shift every following ordered number; consumed
+    /// once in textDidChange to restyle the affected ordered run.
     var pendingListStructureEdit = false
     /// Set when the storage mutated without the census bookkeeping seeing it
     /// (IME composition) — forces the next census back to a full scan.
@@ -148,6 +149,9 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     var wikiVerifyCounter: UInt = 0
 
     var pendingEditedRange: NSRange? = nil
+    /// Exact pre-edit descriptor paired with `pendingEditedRange`. It is
+    /// published only when one accepted proposal produces the change event.
+    var pendingTextMutation: MarkdownTextMutation?
     /// Proposed-edit cycles since the last completed textDidChange. Exactly 1
     /// means the hoisted editedRange/lengthDelta describe a single tracked
     /// edit and incremental fast paths may trust them.
@@ -198,6 +202,7 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     var userPrefersContinuousSpellChecking: Bool = true
     var userPrefersGrammarChecking: Bool = true
     var userPrefersAutomaticSpellingCorrection: Bool = true
+    var userPrefersAutomaticQuoteSubstitution: Bool = true
 
     /// Fires after the user toggles a spell/grammar/auto-correction menu item.
     /// Embedders persist the returned policy (e.g. to `UserDefaults`) and feed
@@ -208,7 +213,8 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
         SpellCheckingPolicy(
             continuousSpellChecking: userPrefersContinuousSpellChecking,
             grammarChecking: userPrefersGrammarChecking,
-            automaticSpellingCorrection: userPrefersAutomaticSpellingCorrection
+            automaticSpellingCorrection: userPrefersAutomaticSpellingCorrection,
+            automaticQuoteSubstitution: userPrefersAutomaticQuoteSubstitution
         )
     }
 
@@ -220,6 +226,7 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
         userPrefersContinuousSpellChecking = textView.isContinuousSpellCheckingEnabled
         userPrefersGrammarChecking = textView.isGrammarCheckingEnabled
         userPrefersAutomaticSpellingCorrection = textView.isAutomaticSpellingCorrectionEnabled
+        userPrefersAutomaticQuoteSubstitution = textView.isAutomaticQuoteSubstitutionEnabled
         // Invalidate the "didn't change" short-circuit so the next selection
         // update re-applies the preferences cleanly.
         cachedSpellingDisabled = nil
@@ -238,6 +245,9 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
         let wikiLinkTokens: [MarkdownToken]
         let imageEmbedTokens: [MarkdownToken]
         let tableTokens: [MarkdownToken]
+        /// Standalone table paragraphs, computed once with the parse instead
+        /// of rediscovering them from every attributed run on each resize.
+        let tableParagraphRanges: [NSRange]
         /// Code-block tokens with their index into `tokens` (active-token
         /// checks need the original index) — collected in the same single
         /// classification pass instead of a per-call full-token filter.
@@ -489,4 +499,3 @@ extension NSTextView {
         return boundingRect
     }
 }
-
