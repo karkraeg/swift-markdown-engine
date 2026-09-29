@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `InlineSyntax.allowsLoneCloseCharacter` — lets an extension span contain a lone
+  occurrence of the close delimiter's first character (`{~~old~>new~~}`,
+  `{--Test-Kompendium--}`). Off by default: `==a=b==` still stays literal.
+
 ## [0.12.0] - 2026-08-10
 
 ### Added

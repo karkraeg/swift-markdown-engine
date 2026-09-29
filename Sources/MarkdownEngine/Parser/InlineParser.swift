@@ -330,7 +330,10 @@ enum InlineParser {
             let ch = ns.character(at: k)
             if ch == newline { return nil }
             if ch == closeFirst {
-                guard matches(ns, len, at: k, chars: close) else { return nil }
+                guard matches(ns, len, at: k, chars: close) else {
+                    if entry.syntax.allowsLoneCloseCharacter { k += 1; continue }
+                    return nil
+                }
                 if entry.syntax.requiresNonEmptyContent, k == contentStart { return nil }
                 if entry.syntax.rejectsCloserRun,
                    let after = peek(ns, k + close.count, len), after == close[close.count - 1] { return nil }

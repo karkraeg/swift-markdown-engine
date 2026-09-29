@@ -54,6 +54,10 @@ public struct InlineSyntax: Sendable, Equatable {
     /// Reject when the character after `close` equals `close`'s last character.
     /// `~~` uses this (strict GFM-ish run handling); `==` does not. Default `false`.
     public var rejectsCloserRun: Bool
+    /// Allow a lone occurrence of `close`'s first character inside the content
+    /// (`{~~old~>new~~}`, `{--Test-Kompendium--}`). By default such a character
+    /// aborts the match, mirroring `==a=b==`. Default `false`.
+    public var allowsLoneCloseCharacter: Bool
 
     public init(
         open: String,
@@ -61,7 +65,8 @@ public struct InlineSyntax: Sendable, Equatable {
         parsesContent: Bool = true,
         requiresNonEmptyContent: Bool = true,
         rejectsOpenerRun: Bool = true,
-        rejectsCloserRun: Bool = false
+        rejectsCloserRun: Bool = false,
+        allowsLoneCloseCharacter: Bool = false
     ) {
         self.open = open
         self.close = close
@@ -69,6 +74,7 @@ public struct InlineSyntax: Sendable, Equatable {
         self.requiresNonEmptyContent = requiresNonEmptyContent
         self.rejectsOpenerRun = rejectsOpenerRun
         self.rejectsCloserRun = rejectsCloserRun
+        self.allowsLoneCloseCharacter = allowsLoneCloseCharacter
     }
 }
 

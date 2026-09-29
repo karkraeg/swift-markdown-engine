@@ -335,6 +335,32 @@ struct InlineParserTests {
         }
     }
 
+    @Test("allowsLoneCloseCharacter admits the close's first character inside the content")
+    func loneCloseCharacterInContent() {
+        struct Substitution: MarkdownExtension {
+            let lenient: Bool
+            var id: String { "substitution" }
+            var inline: InlineSyntax? {
+                InlineSyntax(open: "{~~", close: "~~}", parsesContent: false, allowsLoneCloseCharacter: lenient)
+            }
+            func contentAttributes(theme: MarkdownEditorTheme) -> [NSAttributedString.Key: Any] { [:] }
+            func html(childrenHTML: String) -> String { childrenHTML }
+        }
+        let text = "{~~a~>b~~}"
+        // Default: the lone `~` of `~>` aborts the candidate, it stays literal.
+        let strict = ExtensionRegistry(extensions: [Substitution(lenient: false)])
+        #expect(InlineParser.parse(text, registry: strict) == [.text(r(0, 10))])
+        // Opt-in: the span closes at the first real `~~}`.
+        let lenient = ExtensionRegistry(extensions: [Substitution(lenient: true)])
+        guard case .ext(let node) = InlineParser.parse(text, registry: lenient).first else {
+            Issue.record("expected extension span")
+            return
+        }
+        #expect(node.range == r(0, 10))
+        #expect(node.contentRange == r(3, 4))
+        #expect(node.markers == [r(0, 3), r(7, 3)])
+    }
+
     @Test("both extensions registered: ~~ and == coexist and nest")
     func strikeAndHighlightCoexist() {
         let registry = ExtensionRegistry(extensions: [HighlightExtension(), StrikethroughExtension()])
