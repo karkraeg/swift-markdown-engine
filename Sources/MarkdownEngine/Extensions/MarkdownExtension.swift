@@ -132,6 +132,10 @@ public protocol MarkdownExtension: Sendable {
     /// and reveals normally (via `contentAttributes`) once the caret enters
     /// it. Default `false` (existing behavior: content always visible).
     var hidesContentWhenInactive: Bool { get }
+    /// When `true`, `hidesContentWhenInactive` is skipped for spans that sit
+    /// alone on their line (only whitespace around them), so a standalone
+    /// block-style note never vanishes. Default `false`.
+    var keepsStandaloneContentVisible: Bool { get }
     /// Opaque string reflecting whatever runtime state feeds `contentAttributes`
     /// / `hidesContentWhenInactive` (e.g. a user-configurable tint or toggle).
     /// The embedder rebuilds a fresh `extensions` array on every SwiftUI render,
@@ -154,6 +158,7 @@ public extension MarkdownExtension {
     var block: BlockSyntax? { nil }
     var styleFingerprint: String { "" }
     var hidesContentWhenInactive: Bool { false }
+    var keepsStandaloneContentVisible: Bool { false }
 }
 
 // MARK: - Parser-facing registry (internal)

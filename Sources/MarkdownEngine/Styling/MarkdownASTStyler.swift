@@ -646,6 +646,13 @@ enum MarkdownASTStyler {
             let last = ns.character(at: caret - 1)
             return last != 0x0A && last != 0x0D
         }
+        /// True when only whitespace surrounds `range` on its line(s).
+        func isAloneOnLine(_ range: NSRange) -> Bool {
+            let line = ns.lineRange(for: range)
+            let before = ns.substring(with: NSRange(location: line.location, length: range.location - line.location))
+            let after = ns.substring(with: NSRange(location: NSMaxRange(range), length: NSMaxRange(line) - NSMaxRange(range)))
+            return before.allSatisfy(\.isWhitespace) && after.allSatisfy(\.isWhitespace)
+        }
         var theme: MarkdownEditorTheme { config.theme }
         var text: String { ns as String }
         var fullRange: NSRange { NSRange(location: 0, length: ns.length) }
@@ -873,7 +880,8 @@ enum MarkdownASTStyler {
                 // ATTRIBUTES only; every range comes from the parser, so a
                 // misbehaving extension can restyle its own span at worst.
                 if let ext = ctx.extensionsByID[node.extensionID] {
-                    if ext.hidesContentWhenInactive, !ctx.isActive(node.range) {
+                    if ext.hidesContentWhenInactive, !ctx.isActive(node.range),
+                       !(ext.keepsStandaloneContentVisible && ctx.isAloneOnLine(node.range)) {
                         attrs.append((node.contentRange, [
                             .foregroundColor: NSColor.clear,
                             .font: ctx.inlineMarkerFont,
