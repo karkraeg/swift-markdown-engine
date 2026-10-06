@@ -80,8 +80,18 @@ final class NativeTextView: NSTextView {
     /// Persisted horizontal scroll offset per wide table; survives restyles.
     var tableHorizontalScrollOffsets: [Int: CGFloat] = [:]
 
+    /// Appearance seen on the previous callback. AppKit also fires
+    /// `viewDidChangeEffectiveAppearance` when the view first joins a window; nothing
+    /// was styled under a different appearance then, and forwarding it made every
+    /// editor restyle its whole document right after the initial build (seconds on
+    /// large documents, once per editor).
+    private var lastEffectiveAppearanceName: NSAppearance.Name?
+
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
+        let name = effectiveAppearance.name
+        defer { lastEffectiveAppearanceName = name }
+        guard let previous = lastEffectiveAppearanceName, previous != name else { return }
         // Forward appearance changes to the embedder's highlighter via its registered notification.
         if let name = configuration.services.syntaxHighlighter.appearanceDidChangeNotification {
             NotificationCenter.default.post(name: name, object: self)
