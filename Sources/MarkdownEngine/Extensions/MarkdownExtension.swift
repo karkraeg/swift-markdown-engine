@@ -126,6 +126,10 @@ public protocol MarkdownExtension: Sendable {
     /// Attributes applied to the construct's CONTENT range (between the
     /// markers/fences). Called during styling; must be cheap and synchronous.
     func contentAttributes(theme: MarkdownEditorTheme) -> [NSAttributedString.Key: Any]
+    /// Inline spans only: same as `contentAttributes(theme:)` but receives the
+    /// span's content text, so an extension can style spans differently by
+    /// content. Default forwards to `contentAttributes(theme:)`.
+    func contentAttributes(forContent content: String, theme: MarkdownEditorTheme) -> [NSAttributedString.Key: Any]
     /// When `true`, the CONTENT range (not just the markers) collapses to
     /// near-zero width — same tiny-font/negative-kern recipe the engine
     /// already uses to shrink markers — while the caret is outside the span,
@@ -159,6 +163,9 @@ public extension MarkdownExtension {
     var styleFingerprint: String { "" }
     var hidesContentWhenInactive: Bool { false }
     var keepsStandaloneContentVisible: Bool { false }
+    func contentAttributes(forContent content: String, theme: MarkdownEditorTheme) -> [NSAttributedString.Key: Any] {
+        contentAttributes(theme: theme)
+    }
 }
 
 // MARK: - Parser-facing registry (internal)

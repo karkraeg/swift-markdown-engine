@@ -888,7 +888,7 @@ enum MarkdownASTStyler {
                             .kern: -ctx.inlineMarkerFont.pointSize
                         ]))
                     } else {
-                        attrs.append((node.contentRange, ext.contentAttributes(theme: ctx.theme)))
+                        attrs.append((node.contentRange, ext.contentAttributes(forContent: ctx.ns.substring(with: node.contentRange), theme: ctx.theme)))
                     }
                 }
                 if ctx.isActive(node.range) {
