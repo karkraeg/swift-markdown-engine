@@ -609,8 +609,11 @@ public struct ParagraphStyle: Sendable {
     /// font's default; values above `1.0` add breathing room between lines
     /// within a paragraph.
     public var lineSpacingMultiplier: CGFloat
+    /// Justify body paragraphs (headings, lists and quotes keep natural alignment).
+    public var justified: Bool
 
-    public init(spacingFactor: CGFloat = 0.3, lineHeightExtraSpacing: CGFloat = 2, lineSpacingMultiplier: CGFloat = 1.0) {
+    public init(spacingFactor: CGFloat = 0.3, lineHeightExtraSpacing: CGFloat = 2, lineSpacingMultiplier: CGFloat = 1.0, justified: Bool = false) {
+        self.justified = justified
         self.spacingFactor = spacingFactor
         self.lineHeightExtraSpacing = lineHeightExtraSpacing
         self.lineSpacingMultiplier = lineSpacingMultiplier

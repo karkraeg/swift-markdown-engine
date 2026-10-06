@@ -514,6 +514,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         // Line-spacing multiplier feeds a paragraph style baked into the text
         // storage — needs the same full restyle path as a font change.
         let paragraphStyleChanged = context.coordinator.configuration.paragraph.lineSpacingMultiplier != configuration.paragraph.lineSpacingMultiplier
+            || context.coordinator.configuration.paragraph.justified != configuration.paragraph.justified
         if paragraphStyleChanged {
             context.coordinator.configuration.paragraph = configuration.paragraph
             textView.configuration.paragraph = configuration.paragraph

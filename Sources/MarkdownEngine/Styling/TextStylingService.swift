@@ -39,6 +39,7 @@ struct TextStylingService {
         let paragraph = NSMutableParagraphStyle()
         paragraph.minimumLineHeight = ceil(defaultLineHeight * configuration.paragraph.lineSpacingMultiplier) + configuration.paragraph.lineHeightExtraSpacing
         paragraph.lineSpacing = 0
+        if configuration.paragraph.justified { paragraph.alignment = .justified }
         let baseParagraphSpacing = ceil(defaultLineHeight * configuration.paragraph.spacingFactor)
         paragraph.paragraphSpacing = baseParagraphSpacing
         paragraph.paragraphSpacingBefore = 0
